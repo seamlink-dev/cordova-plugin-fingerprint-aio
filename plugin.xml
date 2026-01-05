@@ -35,6 +35,7 @@
     <config-file target="config.xml" parent="/*">
       <platform name="android">
         <preference name="AndroidXEnabled" value="true"/>
+        <preference name="minSdkVersion" value="23"/>
       </platform>
     </config-file>
 

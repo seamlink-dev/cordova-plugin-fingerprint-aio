@@ -135,7 +135,15 @@ public class Fingerprint extends CordovaPlugin {
     private void sendError(Intent intent) {
         if (intent != null) {
             Bundle extras = intent.getExtras();
-            sendError(extras.getInt("code"), extras.getString("message"));
+            int code = extras.getInt("code");
+            String safeMessage = PluginError.BIOMETRIC_UNKNOWN_ERROR.getMessage();
+            for (PluginError err : PluginError.values()) {
+                if (err.getValue() == code) {
+                    safeMessage = err.getMessage();
+                    break;
+                }
+            }
+            sendError(code, safeMessage);
         } else {
             sendError(PluginError.BIOMETRIC_DISMISSED);
         }

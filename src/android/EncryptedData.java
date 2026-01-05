@@ -32,14 +32,14 @@ class EncryptedData {
     }
 
     private void save(String key, byte[] value, Context context) {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences preferences = context.getSharedPreferences("biometric_aio", Context.MODE_PRIVATE);
         preferences.edit()
                 .putString(key, Base64.encodeToString(value, Base64.DEFAULT))
                 .apply();
     }
 
     private static byte[] load(String key, Context context) throws CryptoException {
-        SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(context);
+        SharedPreferences preferences = context.getSharedPreferences("biometric_aio", Context.MODE_PRIVATE);
         String res = preferences.getString(key, null);
         if (res == null) throw new CryptoException(PluginError.BIOMETRIC_NO_SECRET_FOUND);
         return Base64.decode(res, Base64.DEFAULT);

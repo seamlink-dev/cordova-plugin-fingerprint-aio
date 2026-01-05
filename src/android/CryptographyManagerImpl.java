@@ -36,34 +36,10 @@ class CryptographyManagerImpl implements CryptographyManager {
     }
 
     private SecretKey getOrCreateSecretKey(String keyName, boolean invalidateOnEnrollment, Context context) throws CryptoException {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            return getOrCreateSecretKeyNew(keyName, invalidateOnEnrollment);
-        } else {
-            return getOrCreateSecretKeyOld(keyName, context);
-        }
+        // Minimum SDK is now 23; no need to check version
+        return getOrCreateSecretKeyNew(keyName, invalidateOnEnrollment);
     }
-
-    private SecretKey getOrCreateSecretKeyOld(String keyName, Context context) throws CryptoException {
-        Calendar start = Calendar.getInstance();
-        Calendar end = Calendar.getInstance();
-        end.add(Calendar.YEAR, 1);
-        try {
-            KeyPairGeneratorSpec keySpec = new KeyPairGeneratorSpec.Builder(context)
-                    .setAlias(keyName)
-                    .setSubject(new X500Principal("CN=FINGERPRINT_AIO ," +
-                            " O=FINGERPRINT_AIO" +
-                            " C=World"))
-                    .setSerialNumber(BigInteger.ONE)
-                    .setStartDate(start.getTime())
-                    .setEndDate(end.getTime())
-                    .build();
-            KeyGenerator kg = KeyGenerator.getInstance(KEY_ALGORITHM_AES, ANDROID_KEYSTORE);
-            kg.init(keySpec);
-            return kg.generateKey();
-        } catch (Exception e) {
-            throw new CryptoException(e.getMessage(), e);
-        }
-    }
+    // All legacy pre-M key generation and checks removed: biometric crypto now requires API >= 23 via plugin.xml
 
     @RequiresApi(api = Build.VERSION_CODES.M)
     private SecretKey getOrCreateSecretKeyNew(String keyName, boolean invalidateOnEnrollment) throws CryptoException {
@@ -79,22 +55,23 @@ class CryptographyManagerImpl implements CryptographyManager {
             }
 
             // if you reach here, then a new SecretKey must be generated for that keyName
-            KeyGenParameterSpec.Builder keyGenParamsBuilder = new KeyGenParameterSpec.Builder(keyName,
+                KeyGenParameterSpec.Builder keyGenParamsBuilder = new KeyGenParameterSpec.Builder(keyName,
                     KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
                     .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
                     .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
                     .setKeySize(KEY_SIZE)
-                    .setUserAuthenticationRequired(true);
+                    .setUserAuthenticationRequired(true)
+                    .setUserAuthenticationValidityDurationSeconds(0); // Require auth for every use
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                 keyGenParamsBuilder.setInvalidatedByBiometricEnrollment(invalidateOnEnrollment);
-            }
+                }
 
-            KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM_AES,
+                KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITHM_AES,
                     ANDROID_KEYSTORE);
-            keyGenerator.init(keyGenParamsBuilder.build());
+                keyGenerator.init(keyGenParamsBuilder.build());
 
-            return keyGenerator.generateKey();
+                return keyGenerator.generateKey();
         } catch (Exception e) {
             throw new CryptoException(e.getMessage(), e);
         }

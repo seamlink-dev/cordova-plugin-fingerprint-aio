@@ -47,7 +47,7 @@ public class BiometricActivity extends AppCompatActivity {
         } catch (CryptoException e) {
             finishWithError(e);
         } catch (Exception e) {
-            finishWithError(PluginError.BIOMETRIC_UNKNOWN_ERROR, e.getMessage());
+            finishWithError(PluginError.BIOMETRIC_UNKNOWN_ERROR);
         }
     }
 
@@ -228,7 +228,7 @@ public class BiometricActivity extends AppCompatActivity {
     }
 
     private void finishWithError(CryptoException e) {
-        finishWithError(e.getError().getValue(), e.getMessage());
+        finishWithError(e.getError());
     }
 
     private void finishWithError(PluginError error) {
@@ -236,13 +236,21 @@ public class BiometricActivity extends AppCompatActivity {
     }
 
     private void finishWithError(PluginError error, String message) {
-        finishWithError(error.getValue(), message);
+        finishWithError(error);
     }
 
     private void finishWithError(int code, String message) {
         Intent data = new Intent();
         data.putExtra("code", code);
-        data.putExtra("message", message);
+        // Only return safe, mapped error messages
+        String safeMessage = PluginError.BIOMETRIC_UNKNOWN_ERROR.getMessage();
+        for (PluginError err : PluginError.values()) {
+            if (err.getValue() == code) {
+                safeMessage = err.getMessage();
+                break;
+            }
+        }
+        data.putExtra("message", safeMessage);
         setResult(RESULT_CANCELED, data);
         finish();
     }
