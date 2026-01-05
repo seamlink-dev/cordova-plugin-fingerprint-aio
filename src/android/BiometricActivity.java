@@ -22,7 +22,12 @@ public class BiometricActivity extends AppCompatActivity {
     private static final int REQUEST_CODE_CONFIRM_DEVICE_CREDENTIALS = 2;
     private PromptInfo mPromptInfo;
     private CryptographyManager mCryptographyManager;
-    private static final String SECRET_KEY = "__aio_secret_key";
+    // Key alias now includes package name and secret identifier for uniqueness
+    private String getSecretKeyAlias() {
+        String packageName = getPackageName();
+        String secretId = mPromptInfo.getSecret() != null ? Integer.toHexString(mPromptInfo.getSecret().hashCode()) : "default";
+        return packageName + "_aio_secret_key_" + secretId;
+    }
     private BiometricPrompt mBiometricPrompt;
 
     @Override
@@ -70,8 +75,9 @@ public class BiometricActivity extends AppCompatActivity {
         if (mPromptInfo.getSecret() == null) {
             throw new CryptoException(PluginError.BIOMETRIC_ARGS_PARSING_FAILED);
         }
+        String keyAlias = getSecretKeyAlias();
         Cipher cipher = mCryptographyManager
-                .getInitializedCipherForEncryption(SECRET_KEY, invalidateOnEnrollment, this);
+            .getInitializedCipherForEncryption(keyAlias, invalidateOnEnrollment, this);
         mBiometricPrompt.authenticate(createPromptInfo(), new BiometricPrompt.CryptoObject(cipher));
     }
 
@@ -81,8 +87,9 @@ public class BiometricActivity extends AppCompatActivity {
 
     private void authenticateToDecrypt() throws CryptoException {
         byte[] initializationVector = EncryptedData.loadInitializationVector(this);
+        String keyAlias = getSecretKeyAlias();
         Cipher cipher = mCryptographyManager
-                .getInitializedCipherForDecryption(SECRET_KEY, initializationVector, this);
+            .getInitializedCipherForDecryption(keyAlias, initializationVector, this);
         mBiometricPrompt.authenticate(createPromptInfo(), new BiometricPrompt.CryptoObject(cipher));
     }
 

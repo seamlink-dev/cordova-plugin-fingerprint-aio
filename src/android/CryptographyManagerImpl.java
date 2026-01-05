@@ -35,8 +35,8 @@ class CryptographyManagerImpl implements CryptographyManager {
         return Cipher.getInstance(transformation);
     }
 
+    // Key alias now supports multiple secrets and includes package name
     private SecretKey getOrCreateSecretKey(String keyName, boolean invalidateOnEnrollment, Context context) throws CryptoException {
-        // Minimum SDK is now 23; no need to check version
         return getOrCreateSecretKeyNew(keyName, invalidateOnEnrollment);
     }
     // All legacy pre-M key generation and checks removed: biometric crypto now requires API >= 23 via plugin.xml
